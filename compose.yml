@@ -1,0 +1,58 @@
+#version: '3.8'
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:18.1.1-ce.0
+    container_name: gitlab
+    hostname: gitlab.local
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "22:22"
+    volumes:
+      - ./CI/config:/etc/gitlab
+      - ./CI/log:/var/log/gitlab
+      - ./CI/opt:/var/opt/gitlab
+    networks:
+      gitlab-net:
+        ipv4_address: 172.25.0.10
+
+  gitlab-runner-0:
+    image: gitlab/gitlab-runner:alpine-v18.1.1
+    container_name: gitlab-runner-0
+    restart: always
+    volumes:
+      - ./RU0/config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - gitlab-net
+    extra_hosts:
+      - "gitlab.local:172.25.0.10"
+
+  gitlab-runner-1:
+    image: gitlab/gitlab-runner:alpine-v18.1.1
+    container_name: gitlab-runner-1
+    restart: always
+    volumes:
+      - ./RU1/config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - gitlab-net
+    extra_hosts:
+      - "gitlab.local:172.25.0.10"
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  gitlab-runner-config-0:
+  gitlab-runner-config-1:
+
+networks:
+  gitlab-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
+          gateway: 172.25.0.1
